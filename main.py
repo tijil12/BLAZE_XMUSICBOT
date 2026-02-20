@@ -252,24 +252,35 @@ async def download_voice_message(event):
     return None
 
 # ================= EXTRACT AUDIO/VIDEO =================
-async def extract_audio(query):
+import os
+import yt_dlp
+
+DOWNLOAD_DIR = "downloads"
+os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+
+async def download_audio(query):
     ydl_opts = {
-        'quiet': True,
-        'no_warnings': True,
-        'noplaylist': True,
-        'cookiefile': COOKIES_FILE,
-        'extract_flat': False,
-        'skip_download': True,
+        "format": "bestaudio[ext=m4a]/bestaudio/best",
+        "outtmpl": f"{DOWNLOAD_DIR}/%(id)s.%(ext)s",
+        "quiet": True,
+        "no_warnings": True,
+        "noplaylist": True,
+        "geo_bypass": True,
+        "geo_bypass_country": "IN",
+        "postprocessors": [{
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": "mp3",
+            "preferredquality": "192",
+        }],
     }
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
 
-            # URL ya search
-            if query.startswith(('http://', 'https://')):
-                info = ydl.extract_info(query, download=False)
+            if query.startswith(("http://", "https://")):
+                info = ydl.extract_info(query, download=True)
             else:
-                results = ydl.extract_info(f"ytsearch1:{query}", download=False)
+                results = ydl.extract_info(f"ytsearch1:{query}", download=True)
                 if not results or not results.get("entries"):
                     return None
                 info = results["entries"][0]
@@ -277,57 +288,46 @@ async def extract_audio(query):
             if not info:
                 return None
 
-            # -------- MANUAL AUDIO SELECT --------
-            url = None
-            formats = info.get("formats", [])
-
-            audio_formats = [
-                f for f in formats
-                if f.get("acodec") != "none" and f.get("vcodec") == "none"
-            ]
-
-            if audio_formats:
-                best_audio = max(audio_formats, key=lambda x: x.get("abr") or 0)
-                url = best_audio.get("url")
-
-            if not url:
-                return None
+            base_path = ydl.prepare_filename(info)
+            file_path = os.path.splitext(base_path)[0] + ".mp3"
 
             duration = info.get("duration") or 0
             minutes = duration // 60
             seconds = duration % 60
 
             return {
-                "url": url,
+                "file_path": file_path,
                 "title": info.get("title", "Unknown"),
                 "duration": duration,
                 "duration_str": f"{minutes}:{seconds:02d}",
                 "thumbnail": info.get("thumbnail"),
                 "uploader": info.get("uploader", "Unknown"),
-                "is_local": False,
+                "is_local": True,
             }
 
     except Exception as e:
-        logger.error(f"Extract audio error: {e}")
+        logger.error(f"Download audio error: {e}")
         return None
 
-async def extract_video(query):
+async def download_video(query):
     ydl_opts = {
-        'quiet': True,
-        'no_warnings': True,
-        'noplaylist': True,
-        'cookiefile': COOKIES_FILE,
-        'extract_flat': False,
-        'skip_download': True,
+        "format": "bestvideo[height<=720]+bestaudio/best",
+        "outtmpl": f"{DOWNLOAD_DIR}/%(id)s.%(ext)s",
+        "merge_output_format": "mp4",
+        "quiet": True,
+        "no_warnings": True,
+        "noplaylist": True,
+        "geo_bypass": True,
+        "geo_bypass_country": "IN",
     }
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
 
-            if query.startswith(('http://', 'https://')):
-                info = ydl.extract_info(query, download=False)
+            if query.startswith(("http://", "https://")):
+                info = ydl.extract_info(query, download=True)
             else:
-                results = ydl.extract_info(f"ytsearch1:{query}", download=False)
+                results = ydl.extract_info(f"ytsearch1:{query}", download=True)
                 if not results or not results.get("entries"):
                     return None
                 info = results["entries"][0]
@@ -335,45 +335,32 @@ async def extract_video(query):
             if not info:
                 return None
 
-            url = None
-            formats = info.get("formats", [])
-
-            video_formats = [
-                f for f in formats
-                if f.get("vcodec") != "none"
-                and (f.get("height") or 0) <= 720
-            ]
-
-            if video_formats:
-                best_video = max(video_formats, key=lambda x: x.get("height") or 0)
-                url = best_video.get("url")
-
-            if not url:
-                return None
+            base_path = ydl.prepare_filename(info)
+            file_path = os.path.splitext(base_path)[0] + ".mp4"
 
             duration = info.get("duration") or 0
             minutes = duration // 60
             seconds = duration % 60
 
             return {
-                "url": url,
+                "file_path": file_path,
                 "title": info.get("title", "Unknown"),
                 "duration": duration,
                 "duration_str": f"{minutes}:{seconds:02d}",
                 "thumbnail": info.get("thumbnail"),
                 "uploader": info.get("uploader", "Unknown"),
-                "is_local": False,
+                "is_local": True,
             }
 
     except Exception as e:
-        logger.error(f"Extract video error: {e}")
+        logger.error(f"Download video error: {e}")
         return None
 
 # ================= PLAY SONG =================
 async def play_song(chat_id, song_info, is_video=False):
     player = await get_player(chat_id)
-    
-    # Ensure assistant is in the chat
+
+    # Ensure assistant is in chat
     for attempt in range(3):
         try:
             await assistant.get_entity(chat_id)
@@ -384,142 +371,180 @@ async def play_song(chat_id, song_info, is_video=False):
                 await asyncio.sleep(2)
             else:
                 await asyncio.sleep(1)
-    
+
     try:
-        # For local files, use file path
-        if song_info.get('is_local', False):
+        # Determine source (local file or URL)
+        source = song_info.get("file_path") or song_info.get("url")
+        if not source:
+            return False
+
+        if is_video:
             media = MediaStream(
-                song_info['url'],
+                source,
+                audio_parameters=AudioQuality.STUDIO,
+                video_parameters=VideoQuality.HD_720p,
+            )
+        else:
+            media = MediaStream(
+                source,
                 audio_parameters=AudioQuality.STUDIO,
             )
-        else:
-            if is_video:
-                media = MediaStream(
-                    song_info['url'],
-                    audio_parameters=AudioQuality.STUDIO,
-                    video_parameters=VideoQuality.HD_720p,
-                )
-            else:
-                media = MediaStream(
-                    song_info['url'],
-                    audio_parameters=AudioQuality.STUDIO,
-                )
-        
+
         await call.play(chat_id, media)
-        
-        song_info['is_video'] = is_video
+
+        song_info["is_video"] = is_video
         player.current = song_info
         player.paused = False
-        
+
+        # Cancel previous auto task
         if player.play_task and not player.play_task.done():
             player.play_task.cancel()
-        
-        if song_info['duration'] > 0:
+
+        # Auto next only if duration known
+        duration = song_info.get("duration", 0)
+        if duration > 0:
             player.play_task = asyncio.create_task(
-                auto_next(chat_id, song_info['duration'])
+                auto_next(chat_id, duration)
             )
         else:
-            # If duration unknown, create task that never ends (user must stop manually)
-            player.play_task = asyncio.create_task(asyncio.Future())
-        
+            player.play_task = None
+
         await send_streaming_message(chat_id, song_info, is_video)
-        
+
         return True
+
     except Exception as e:
         logger.error(f"Play song error: {e}")
         return False
 
+
 async def send_streaming_message(chat_id, song_info, is_video):
     player = await get_player(chat_id)
-    
-    # Different title for voice messages
-    if song_info.get('is_local', False):
-        title_display = "🎤 Voice Message"
-    else:
-        title_display = song_info['title'][:30]
-    
+
+    title_display = (
+        "🎤 Voice Message"
+        if song_info.get("is_local", False)
+        else song_info.get("title", "Unknown")[:30]
+    )
+
     caption = f"""
 **╭━━━━ ⟬ ➲ ɴᴏᴡ sᴛʀᴇᴀᴍɪɴɢ ⟭━━━━╮**
 ┃
 ┃⟡➣ **ᴛɪᴛʟᴇ:** `{title_display}`
-┃⟡➣ **ᴅᴜʀᴀᴛɪᴏɴ:** `{song_info['duration_str']}`
+┃⟡➣ **ᴅᴜʀᴀᴛɪᴏɴ:** `{song_info.get('duration_str', '0:00')}`
 ┃⟡➣ **ᴛʏᴘᴇ:** `{'🎬 ᴠɪᴅᴇᴏ' if is_video else '🎵 ᴀᴜᴅɪᴏ'}`
 ┃⟡➣ **ʟᴏᴏᴘ:** `{'ᴏɴ' if player.loop else 'ᴏғғ'}`
 ┃⟡➣ **ǫᴜᴇᴜᴇ:** `{len(player.queue)} sᴏɴɢs`
-┃⟡➣ **ᴜᴘʟᴏᴀᴅᴇʀ:** `{song_info['uploader']}`
+┃⟡➣ **ᴜᴘʟᴏᴀᴅᴇʀ:** `{song_info.get('uploader', 'Unknown')}`
 **╰━━━━━━━━━━━━━━━━━━━━━━╯**
     """
-    
+
     buttons = [
-        [Button.inline("⏸️", data=f"pause_{chat_id}"),
-         Button.inline("⏭️", data=f"skip_{chat_id}"),
-         Button.inline("⏹️", data=f"end_{chat_id}"),
-         Button.inline("🔄", data=f"loop_{chat_id}")],
-        [Button.inline("📋 ǫᴜᴇᴜᴇ", data=f"queue_{chat_id}"),
-         Button.inline("🗑️ ᴄʟᴇᴀʀ", data=f"clear_{chat_id}")]
+        [
+            Button.inline("⏸️", data=f"pause_{chat_id}"),
+            Button.inline("⏭️", data=f"skip_{chat_id}"),
+            Button.inline("⏹️", data=f"end_{chat_id}"),
+            Button.inline("🔄", data=f"loop_{chat_id}")
+        ],
+        [
+            Button.inline("📋 ǫᴜᴇᴜᴇ", data=f"queue_{chat_id}"),
+            Button.inline("🗑️ ᴄʟᴇᴀʀ", data=f"clear_{chat_id}")
+        ]
     ]
-    
-    thumbnail_url = song_info.get('thumbnail')
+
+    thumbnail_url = song_info.get("thumbnail")
     thumb_path = None
-    if thumbnail_url and not song_info.get('is_local', False):
-        thumb_path = await download_and_convert_thumbnail(thumbnail_url) if thumbnail_url else None
-    
-    # Delete old message if exists
+
+    if thumbnail_url and not song_info.get("is_local", False):
+        thumb_path = await download_and_convert_thumbnail(thumbnail_url)
+
+    # Delete old control message
     if player.control_message_id and player.control_chat_id:
         try:
-            await bot.delete_messages(player.control_chat_id, player.control_message_id)
+            await bot.delete_messages(
+                player.control_chat_id,
+                player.control_message_id
+            )
         except:
             pass
-    
-    # Send new message
-    if thumb_path:
-        msg = await bot.send_file(
+
+    # Send new control message
+    try:
+        if thumb_path and os.path.exists(thumb_path):
+            msg = await bot.send_file(
+                chat_id,
+                thumb_path,
+                caption=caption,
+                buttons=buttons,
+                spoiler=True
+            )
+            os.remove(thumb_path)
+        else:
+            msg = await bot.send_message(
+                chat_id,
+                caption,
+                buttons=buttons
+            )
+    except Exception:
+        msg = await bot.send_message(
             chat_id,
-            thumb_path,
-            caption=caption,
-            buttons=buttons,
-            spoiler=True
+            caption,
+            buttons=buttons
         )
-        os.remove(thumb_path)
-    else:
-        msg = await bot.send_message(chat_id, caption, buttons=buttons)
-    
+
     player.control_message_id = msg.id
     player.control_chat_id = chat_id
 
+
 async def auto_next(chat_id, duration):
     await asyncio.sleep(duration)
+
     player = await get_player(chat_id)
-    
+
     if player.loop and player.current:
-        await play_song(chat_id, player.current, player.current.get('is_video', False))
+        await play_song(
+            chat_id,
+            player.current,
+            player.current.get("is_video", False)
+        )
         return
-    
+
     if player.queue:
         next_song = player.queue.pop(0)
-        await play_song(chat_id, next_song, next_song.get('is_video', False))
+        await play_song(
+            chat_id,
+            next_song,
+            next_song.get("is_video", False)
+        )
     else:
-        # Clean up local files if any
-        if player.current and player.current.get('is_local', False):
-            try:
-                os.remove(player.current['url'])
-            except:
-                pass
-        
+        # Cleanup local file
+        if player.current:
+            file_path = player.current.get("file_path")
+            if file_path and os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                except:
+                    pass
+
         player.current = None
+
         try:
             await call.leave_call(chat_id)
         except:
             pass
-        
+
+        # Delete control message
         if player.control_message_id and player.control_chat_id:
             try:
-                await bot.delete_messages(player.control_chat_id, player.control_message_id)
+                await bot.delete_messages(
+                    player.control_chat_id,
+                    player.control_message_id
+                )
             except:
                 pass
+
         player.control_message_id = None
         player.control_chat_id = None
-
 # ================= COMMAND CHECKER =================
 def is_command(text, command):
     """Super simple command checker for large groups"""
@@ -612,56 +637,56 @@ async def message_handler(event):
     # /play command (with voice message support)
     if is_command(text, "play"):
         query = get_command_args(text, "play")
-        
-        # Check if it's a reply to voice message
-        voice_info = None
-        if not query and event.message.reply_to_msg_id:
-            voice_info = await download_voice_message(event)
-            if voice_info:
-                query = "voice"  # Dummy query to proceed
-        
-        if not query and not voice_info:
-            reply_msg = await event.reply("**ᴜsᴀɢᴇ:** `/play <sᴏɴɢ ɴᴀᴍᴇ ᴏʀ ʟɪɴᴋ>`\n**ᴏʀ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴠᴏɪᴄᴇ ᴍᴇssᴀɢᴇ**")
-            # Delete user's command
-            try:
-                await event.message.delete()
-            except:
-                pass
-            # Delete usage message after 5 seconds
-            await asyncio.sleep(5)
-            try:
-                await reply_msg.delete()
-            except:
-                pass
-            return
-        
-        msg = await event.reply("**🔍 ᴘʀᴏᴄᴇssɪɴɢ...**")
-        
-        # Delete user's command message
+
+    voice_info = None
+    if not query and event.message.reply_to_msg_id:
+        voice_info = await download_voice_message(event)
+        if voice_info:
+            query = "voice"
+
+    if not query and not voice_info:
+        reply_msg = await event.reply(
+            "**ᴜsᴀɢᴇ:** `/play <sᴏɴɢ ɴᴀᴍᴇ ᴏʀ ʟɪɴᴋ>`\n"
+            "**ᴏʀ ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴠᴏɪᴄᴇ ᴍᴇssᴀɢᴇ**"
+        )
         try:
             await event.message.delete()
         except:
             pass
-        
-        # If voice info exists, use it directly
-        if voice_info:
-            song_info = voice_info
-        else:
-            song_info = await extract_audio(query)
-        
-        if not song_info or not song_info.get('url'):
-            await msg.edit("**❌ sᴏɴɢ ɴᴏᴛ ғᴏᴜɴᴅ!**")
-            await asyncio.sleep(3)
-            await msg.delete()
-            return
-        
-        player = await get_player(chat_id)
-        
-        if player.current:
-            player.queue.append(song_info)
-            queue_pos = len(player.queue)
-            
-            caption = f"""
+
+        await asyncio.sleep(5)
+        try:
+            await reply_msg.delete()
+        except:
+            pass
+        return
+
+    msg = await event.reply("**🔍 ᴘʀᴏᴄᴇssɪɴɢ...**")
+
+    try:
+        await event.message.delete()
+    except:
+        pass
+
+    # Download audio
+    if voice_info:
+        song_info = voice_info
+    else:
+        song_info = await download_audio(query)
+
+    if not song_info or not song_info.get("file_path"):
+        await msg.edit("**❌ sᴏɴɢ ɴᴏᴛ ғᴏᴜɴᴅ!**")
+        await asyncio.sleep(3)
+        await msg.delete()
+        return
+
+    player = await get_player(chat_id)
+
+    if player.current:
+        player.queue.append(song_info)
+        queue_pos = len(player.queue)
+
+        caption = f"""
 **╭━━━━ ⟬ ➲ ᴀᴅᴅᴇᴅ ᴛᴏ ǫᴜᴇᴜᴇ ⟭━━━━╮**
 ┃
 ┃⟡➣ **ᴛɪᴛʟᴇ:** `{'Voice Message' if voice_info else song_info['title'][:30]}`
@@ -669,89 +694,77 @@ async def message_handler(event):
 ┃⟡➣ **ᴘᴏsɪᴛɪᴏɴ:** `#{queue_pos}`
 ┃⟡➣ **ᴜᴘʟᴏᴀᴅᴇʀ:** `{song_info['uploader']}`
 **╰━━━━━━━━━━━━━━━━━━━━━╯**
-            """
-            
-            thumbnail_url = song_info.get('thumbnail')
-            thumb_path = None
-            if thumbnail_url and not voice_info:
-                thumb_path = await download_and_convert_thumbnail(thumbnail_url) if thumbnail_url else None
-            
+        """
+
+        await msg.delete()
+        sent_msg = await event.reply(caption)
+
+        await asyncio.sleep(10)
+        try:
+            await sent_msg.delete()
+        except:
+            pass
+    else:
+        success = await play_song(chat_id, song_info, is_video=False)
+
+        if not success:
+            await msg.edit("**❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴘʟᴀʏ sᴏɴɢ!**")
+            await asyncio.sleep(3)
             await msg.delete()
-            
-            if thumb_path:
-                sent_msg = await bot.send_file(
-                    chat_id,
-                    thumb_path,
-                    caption=caption,
-                    spoiler=True
-                )
-                os.remove(thumb_path)
-            else:
-                sent_msg = await event.reply(caption)
-            
-            # Auto delete queue message after 10 seconds
-            await asyncio.sleep(10)
-            try:
-                await sent_msg.delete()
-            except:
-                pass
+
+            # Cleanup voice file
+            if voice_info:
+                path = song_info.get("file_path")
+                if path and os.path.exists(path):
+                    os.remove(path)
         else:
-            success = await play_song(chat_id, song_info, is_video=False)
-            if not success:
-                await msg.edit("**❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴘʟᴀʏ sᴏɴɢ!**")
-                await asyncio.sleep(3)
-                await msg.delete()
-                
-                # Clean up local file if it was a voice message
-                if voice_info:
-                    try:
-                        os.remove(song_info['url'])
-                    except:
-                        pass
-            else:
-                await msg.delete()
-        return
-    
-    # /vplay command
-    if is_command(text, "vplay"):
-        query = get_command_args(text, "vplay")
-        if not query:
-            reply_msg = await event.reply("**ᴜsᴀɢᴇ:** `/vplay <ᴠɪᴅᴇᴏ ɴᴀᴍᴇ ᴏʀ ʟɪɴᴋ>`")
-            # Delete user's command
-            try:
-                await event.message.delete()
-            except:
-                pass
-            # Delete usage message after 5 seconds
-            await asyncio.sleep(5)
-            try:
-                await reply_msg.delete()
-            except:
-                pass
-            return
-        
-        msg = await event.reply("**🎬 sᴇᴀʀᴄʜɪɴɢ ғᴏʀ ᴠɪᴅᴇᴏ...**")
-        
-        # Delete user's command message
+            await msg.delete()
+
+    return
+
+
+# /vplay command (download video version)
+if is_command(text, "vplay"):
+    query = get_command_args(text, "vplay")
+
+    if not query:
+        reply_msg = await event.reply(
+            "**ᴜsᴀɢᴇ:** `/vplay <ᴠɪᴅᴇᴏ ɴᴀᴍᴇ ᴏʀ ʟɪɴᴋ>`"
+        )
         try:
             await event.message.delete()
         except:
             pass
-        
-        video_info = await extract_video(query)
-        if not video_info or not video_info['url']:
-            await msg.edit("**❌ ᴠɪᴅᴇᴏ ɴᴏᴛ ғᴏᴜɴᴅ!**")
-            await asyncio.sleep(3)
-            await msg.delete()
-            return
-        
-        player = await get_player(chat_id)
-        
-        if player.current:
-            player.queue.append(video_info)
-            queue_pos = len(player.queue)
-            
-            caption = f"""
+
+        await asyncio.sleep(5)
+        try:
+            await reply_msg.delete()
+        except:
+            pass
+        return
+
+    msg = await event.reply("**🎬 ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴠɪᴅᴇᴏ...**")
+
+    try:
+        await event.message.delete()
+    except:
+        pass
+
+    video_info = await download_video(query)
+
+    if not video_info or not video_info.get("file_path"):
+        await msg.edit("**❌ ᴠɪᴅᴇᴏ ɴᴏᴛ ғᴏᴜɴᴅ!**")
+        await asyncio.sleep(3)
+        await msg.delete()
+        return
+
+    player = await get_player(chat_id)
+
+    if player.current:
+        player.queue.append(video_info)
+        queue_pos = len(player.queue)
+
+        caption = f"""
 **╭━━━━ ⟬ ➲ ᴀᴅᴅᴇᴅ ᴛᴏ ǫᴜᴇᴜᴇ ⟭━━━━╮**
 ┃
 ┃⟡➣ **ᴛɪᴛʟᴇ:** `{video_info['title'][:20]}`
@@ -759,39 +772,27 @@ async def message_handler(event):
 ┃⟡➣ **ᴘᴏsɪᴛɪᴏɴ:** `#{queue_pos}`
 ┃⟡➣ **ᴜᴘʟᴏᴀᴅᴇʀ:** `{video_info['uploader']}`
 **╰━━━━━━━━━━━━━━━━━━━╯**
-            """
-            
-            thumbnail_url = video_info.get('thumbnail')
-            thumb_path = await download_and_convert_thumbnail(thumbnail_url) if thumbnail_url else None
-            
+        """
+
+        await msg.delete()
+        sent_msg = await event.reply(caption)
+
+        await asyncio.sleep(10)
+        try:
+            await sent_msg.delete()
+        except:
+            pass
+    else:
+        success = await play_song(chat_id, video_info, is_video=True)
+
+        if not success:
+            await msg.edit("**❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴘʟᴀʏ ᴠɪᴅᴇᴏ!**")
+            await asyncio.sleep(3)
             await msg.delete()
-            
-            if thumb_path:
-                sent_msg = await bot.send_file(
-                    chat_id,
-                    thumb_path,
-                    caption=caption,
-                    spoiler=True
-                )
-                os.remove(thumb_path)
-            else:
-                sent_msg = await event.reply(caption)
-            
-            # Auto delete queue message after 10 seconds
-            await asyncio.sleep(10)
-            try:
-                await sent_msg.delete()
-            except:
-                pass
         else:
-            success = await play_song(chat_id, video_info, is_video=True)
-            if not success:
-                await msg.edit("**❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴘʟᴀʏ ᴠɪᴅᴇᴏ!**")
-                await asyncio.sleep(3)
-                await msg.delete()
-            else:
-                await msg.delete()
-        return
+            await msg.delete()
+
+    return
     
     # /skip command
     if is_command(text, "skip"):
