@@ -33,7 +33,7 @@ API_ID = 30191201
 API_HASH = "5c87a8808e935cc3d97958d0bb24ff1f"
 COOKIES_FILE = "cookies.txt"
 ASSISTANT_SESSION = "1BVtsOKoBu2m6t9kIzAreFVIjWQXldBPJOS_nDiq7Kyp0P8vBtOfrjIjRaBMJNDEGK1HcF6pdH7C3EzMULEcrKxMpi42eTFoqYvzFGR4JIdDHTCh2F2hrLpOswumw3Imlyk5uL4a3gTBP24QLMVvj7TFpcO71KQ4CeUW8ok8BeXkedQTkLk2H9cep4WjvOqTVphVDrbuJlhgcDD90fv7eRv3_F7JUFtrmxpksaQJUJQjM3SGjLTuRjgFHiAnEctVYHsxZ0ee2_oJE0AO_tbupxXo3TJ8xsA_lcis-lcRSbSBuDUG6LLY1atBNgw0S7xOv006jeETUcs7ORikuZFsEwSwTp4A7fjQ="
-OWNER_ID = 8547249321
+OWNER_ID = 8012308944
 UPDATES_CHANNEL = "BLAZE_XMUSIC"  # Bina @ ke
 
 # Welcome image URL
@@ -231,7 +231,7 @@ async def download_voice_message(event):
                     await msg.delete()
                     
                     return {
-                        'url': output_file,
+                        'file_path': output_file,
                         'title': 'Voice Message',
                         'duration': duration,
                         'duration_str': duration_str,
@@ -252,9 +252,6 @@ async def download_voice_message(event):
     return None
 
 # ================= EXTRACT AUDIO/VIDEO =================
-import os
-import yt_dlp
-
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
@@ -302,7 +299,7 @@ async def download_audio(query):
                 "duration_str": f"{minutes}:{seconds:02d}",
                 "thumbnail": info.get("thumbnail"),
                 "uploader": info.get("uploader", "Unknown"),
-                "is_local": True,
+                "is_local": False,
             }
 
     except Exception as e:
@@ -349,7 +346,7 @@ async def download_video(query):
                 "duration_str": f"{minutes}:{seconds:02d}",
                 "thumbnail": info.get("thumbnail"),
                 "uploader": info.get("uploader", "Unknown"),
-                "is_local": True,
+                "is_local": False,
             }
 
     except Exception as e:
@@ -420,13 +417,17 @@ async def play_song(chat_id, song_info, is_video=False):
 
 async def send_streaming_message(chat_id, song_info, is_video):
     player = await get_player(chat_id)
-
-    title_display = (
-        "🎤 Voice Message"
-        if song_info.get("is_local", False)
-        else song_info.get("title", "Unknown")[:30]
-    )
-
+    
+    # Different title for voice messages
+    if song_info.get('is_local', False):
+        title_display = "🎤 Voice Message"
+        uploader = song_info.get('uploader', 'Unknown')
+        thumbnail_url = None
+    else:
+        title_display = song_info.get('title', 'Unknown')[:30]
+        uploader = song_info.get('uploader', 'Unknown')
+        thumbnail_url = song_info.get('thumbnail')
+    
     caption = f"""
 **╭━━━━ ⟬ ➲ ɴᴏᴡ sᴛʀᴇᴀᴍɪɴɢ ⟭━━━━╮**
 ┃
@@ -435,29 +436,24 @@ async def send_streaming_message(chat_id, song_info, is_video):
 ┃⟡➣ **ᴛʏᴘᴇ:** `{'🎬 ᴠɪᴅᴇᴏ' if is_video else '🎵 ᴀᴜᴅɪᴏ'}`
 ┃⟡➣ **ʟᴏᴏᴘ:** `{'ᴏɴ' if player.loop else 'ᴏғғ'}`
 ┃⟡➣ **ǫᴜᴇᴜᴇ:** `{len(player.queue)} sᴏɴɢs`
-┃⟡➣ **ᴜᴘʟᴏᴀᴅᴇʀ:** `{song_info.get('uploader', 'Unknown')}`
+┃⟡➣ **ᴜᴘʟᴏᴀᴅᴇʀ:** `{uploader}`
 **╰━━━━━━━━━━━━━━━━━━━━━━╯**
     """
-
+    
     buttons = [
-        [
-            Button.inline("⏸️", data=f"pause_{chat_id}"),
-            Button.inline("⏭️", data=f"skip_{chat_id}"),
-            Button.inline("⏹️", data=f"end_{chat_id}"),
-            Button.inline("🔄", data=f"loop_{chat_id}")
-        ],
-        [
-            Button.inline("📋 ǫᴜᴇᴜᴇ", data=f"queue_{chat_id}"),
-            Button.inline("🗑️ ᴄʟᴇᴀʀ", data=f"clear_{chat_id}")
-        ]
+        [Button.inline("⏸️", data=f"pause_{chat_id}"),
+         Button.inline("⏭️", data=f"skip_{chat_id}"),
+         Button.inline("⏹️", data=f"end_{chat_id}"),
+         Button.inline("🔄", data=f"loop_{chat_id}")],
+        [Button.inline("📋 ǫᴜᴇᴜᴇ", data=f"queue_{chat_id}"),
+         Button.inline("🗑️ ᴄʟᴇᴀʀ", data=f"clear_{chat_id}")]
     ]
-
-    thumbnail_url = song_info.get("thumbnail")
+    
+    # Download thumbnail only for non-voice messages
     thumb_path = None
-
-    if thumbnail_url and not song_info.get("is_local", False):
+    if thumbnail_url and not song_info.get('is_local', False):
         thumb_path = await download_and_convert_thumbnail(thumbnail_url)
-
+    
     # Delete old control message
     if player.control_message_id and player.control_chat_id:
         try:
@@ -467,7 +463,7 @@ async def send_streaming_message(chat_id, song_info, is_video):
             )
         except:
             pass
-
+    
     # Send new control message
     try:
         if thumb_path and os.path.exists(thumb_path):
@@ -491,7 +487,7 @@ async def send_streaming_message(chat_id, song_info, is_video):
             caption,
             buttons=buttons
         )
-
+    
     player.control_message_id = msg.id
     player.control_chat_id = chat_id
 
@@ -545,6 +541,7 @@ async def auto_next(chat_id, duration):
 
         player.control_message_id = None
         player.control_chat_id = None
+
 # ================= COMMAND CHECKER =================
 def is_command(text, command):
     """Super simple command checker for large groups"""
@@ -633,6 +630,8 @@ async def message_handler(event):
         return
     
     # ===== MUSIC COMMANDS =====
+    
+    # /play command
     if is_command(text, "play"):
         query = get_command_args(text, "play")
 
@@ -683,20 +682,43 @@ async def message_handler(event):
         if player.current:
             player.queue.append(song_info)
             queue_pos = len(player.queue)
-
+            
+            # Different title for voice messages
+            if voice_info:
+                title_display = "Voice Message"
+            else:
+                title_display = song_info['title'][:20]
+            
             caption = f"""
 **╭━━━━ ⟬ ➲ ᴀᴅᴅᴇᴅ ᴛᴏ ǫᴜᴇᴜᴇ ⟭━━━━╮**
 ┃
-┃⟡➣ **ᴛɪᴛʟᴇ:** `{'Voice Message' if voice_info else song_info['title'][:30]}`
+┃⟡➣ **ᴛɪᴛʟᴇ:** `{title_display}`
 ┃⟡➣ **ᴅᴜʀᴀᴛɪᴏɴ:** `{song_info['duration_str']}`
 ┃⟡➣ **ᴘᴏsɪᴛɪᴏɴ:** `#{queue_pos}`
 ┃⟡➣ **ᴜᴘʟᴏᴀᴅᴇʀ:** `{song_info['uploader']}`
-**╰━━━━━━━━━━━━━━━━━━━━━╯**
+**╰━━━━━━━━━━━━━━━━━━━╯**
             """
-
+            
+            # Download thumbnail only for non-voice messages
+            thumbnail_url = song_info.get('thumbnail')
+            thumb_path = None
+            if thumbnail_url and not voice_info:
+                thumb_path = await download_and_convert_thumbnail(thumbnail_url)
+            
             await msg.delete()
-            sent_msg = await event.reply(caption)
-
+            
+            if thumb_path:
+                sent_msg = await bot.send_file(
+                    chat_id,
+                    thumb_path,
+                    caption=caption,
+                    spoiler=True
+                )
+                os.remove(thumb_path)
+            else:
+                sent_msg = await event.reply(caption)
+            
+            # Auto delete queue message after 10 seconds
             await asyncio.sleep(10)
             try:
                 await sent_msg.delete()
@@ -772,10 +794,24 @@ async def message_handler(event):
 ┃⟡➣ **ᴜᴘʟᴏᴀᴅᴇʀ:** `{video_info['uploader']}`
 **╰━━━━━━━━━━━━━━━━━━━╯**
             """
-
+            
+            thumbnail_url = video_info.get('thumbnail')
+            thumb_path = await download_and_convert_thumbnail(thumbnail_url) if thumbnail_url else None
+            
             await msg.delete()
-            sent_msg = await event.reply(caption)
-
+            
+            if thumb_path:
+                sent_msg = await bot.send_file(
+                    chat_id,
+                    thumb_path,
+                    caption=caption,
+                    spoiler=True
+                )
+                os.remove(thumb_path)
+            else:
+                sent_msg = await event.reply(caption)
+            
+            # Auto delete queue message after 10 seconds
             await asyncio.sleep(10)
             try:
                 await sent_msg.delete()
@@ -839,7 +875,7 @@ async def message_handler(event):
         # Clean up current local file if it was a voice message
         if player.current and player.current.get('is_local', False):
             try:
-                os.remove(player.current['url'])
+                os.remove(player.current['file_path'])
             except:
                 pass
         
@@ -980,7 +1016,7 @@ async def message_handler(event):
         # Clean up current local file if it was a voice message
         if player.current and player.current.get('is_local', False):
             try:
-                os.remove(player.current['url'])
+                os.remove(player.current['file_path'])
             except:
                 pass
         
@@ -996,7 +1032,7 @@ async def message_handler(event):
         for song in player.queue:
             if song.get('is_local', False):
                 try:
-                    os.remove(song['url'])
+                    os.remove(song['file_path'])
                 except:
                     pass
         
@@ -1035,7 +1071,10 @@ async def message_handler(event):
         
         text = "**📋 ǫᴜᴇᴜᴇ ʟɪsᴛ:**\n\n"
         for i, song in enumerate(player.queue[:10], 1):
-            title = 'Voice Message' if song.get('is_local', False) else song['title'][:30]
+            if song.get('is_local', False):
+                title = 'Voice Message'
+            else:
+                title = song['title'][:30]
             text += f"{i}. {title} ({song['duration_str']})\n"
         
         if len(player.queue) > 10:
