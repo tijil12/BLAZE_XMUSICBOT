@@ -28,7 +28,7 @@ from telethon.tl.types import InputPeerEmpty
 import subprocess
 
 # ================= CONFIGURATION =================
-BOT_TOKEN = "8577526430:AAErDcgPJVvc4krxdmhKW5xXxKNGzc8Lri8"
+BOT_TOKEN = "8237143637:AAG7sW21w5U_F4ipvvZWzEm0UKQjoVGp_gQ"
 API_ID = 30191201
 API_HASH = "5c87a8808e935cc3d97958d0bb24ff1f"
 COOKIES_FILE = "cookies.txt"
