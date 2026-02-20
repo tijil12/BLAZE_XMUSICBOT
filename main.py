@@ -254,132 +254,115 @@ async def download_voice_message(event):
 # ================= EXTRACT AUDIO/VIDEO =================
 async def extract_audio(query):
     ydl_opts = {
-        'format': 'bestaudio/best',
         'quiet': True,
         'no_warnings': True,
         'noplaylist': True,
         'cookiefile': COOKIES_FILE,
+        'extract_flat': False,
+        'skip_download': True,
     }
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
 
-            # Direct URL ya search
+            # URL ya search
             if query.startswith(('http://', 'https://')):
                 info = ydl.extract_info(query, download=False)
             else:
                 results = ydl.extract_info(f"ytsearch1:{query}", download=False)
-                if not results or 'entries' not in results or not results['entries']:
+                if not results or not results.get("entries"):
                     return None
-                info = results['entries'][0]
+                info = results["entries"][0]
 
             if not info:
                 return None
 
-            # --------- BEST AUDIO MANUAL SELECT ---------
+            # -------- MANUAL AUDIO SELECT --------
             url = None
+            formats = info.get("formats", [])
 
-            if 'formats' in info:
-                audio_formats = [
-                    f for f in info['formats']
-                    if f.get('acodec') != 'none' and f.get('vcodec') == 'none'
-                ]
+            audio_formats = [
+                f for f in formats
+                if f.get("acodec") != "none" and f.get("vcodec") == "none"
+            ]
 
-                if audio_formats:
-                    # Highest bitrate audio select
-                    best_audio = max(audio_formats, key=lambda x: x.get('abr') or 0)
-                    url = best_audio.get('url')
-
-            # fallback
-            if not url:
-                url = info.get('url')
+            if audio_formats:
+                best_audio = max(audio_formats, key=lambda x: x.get("abr") or 0)
+                url = best_audio.get("url")
 
             if not url:
                 return None
 
-            # Duration formatting
-            duration = info.get('duration') or 0
+            duration = info.get("duration") or 0
             minutes = duration // 60
             seconds = duration % 60
-            duration_str = f"{minutes}:{seconds:02d}"
 
             return {
-                'url': url,
-                'title': info.get('title', 'Unknown'),
-                'duration': duration,
-                'duration_str': duration_str,
-                'thumbnail': info.get('thumbnail'),
-                'uploader': info.get('uploader', 'Unknown'),
-                'is_local': False
+                "url": url,
+                "title": info.get("title", "Unknown"),
+                "duration": duration,
+                "duration_str": f"{minutes}:{seconds:02d}",
+                "thumbnail": info.get("thumbnail"),
+                "uploader": info.get("uploader", "Unknown"),
+                "is_local": False,
             }
 
     except Exception as e:
         logger.error(f"Extract audio error: {e}")
         return None
 
-
 async def extract_video(query):
     ydl_opts = {
-        'format': 'bestvideo[height<=720]+bestaudio/best',
         'quiet': True,
         'no_warnings': True,
         'noplaylist': True,
         'cookiefile': COOKIES_FILE,
+        'extract_flat': False,
+        'skip_download': True,
     }
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
 
-            # Direct URL ya search
             if query.startswith(('http://', 'https://')):
                 info = ydl.extract_info(query, download=False)
             else:
                 results = ydl.extract_info(f"ytsearch1:{query}", download=False)
-                if not results or 'entries' not in results or not results['entries']:
+                if not results or not results.get("entries"):
                     return None
-                info = results['entries'][0]
+                info = results["entries"][0]
 
             if not info:
                 return None
 
-            # --------- VIDEO URL HANDLE ---------
-            url = info.get('url')
+            url = None
+            formats = info.get("formats", [])
 
-            # Agar combined stream nahi mila to manual select
-            if not url and 'formats' in info:
-                video_formats = [
-                    f for f in info['formats']
-                    if f.get('vcodec') != 'none'
-                ]
+            video_formats = [
+                f for f in formats
+                if f.get("vcodec") != "none"
+                and (f.get("height") or 0) <= 720
+            ]
 
-                if video_formats:
-                    # 720p tak best choose karo
-                    video_formats = [
-                        f for f in video_formats
-                        if (f.get('height') or 0) <= 720
-                    ]
-
-                    if video_formats:
-                        best_video = max(video_formats, key=lambda x: x.get('height') or 0)
-                        url = best_video.get('url')
+            if video_formats:
+                best_video = max(video_formats, key=lambda x: x.get("height") or 0)
+                url = best_video.get("url")
 
             if not url:
                 return None
 
-            # Duration formatting
-            duration = info.get('duration') or 0
+            duration = info.get("duration") or 0
             minutes = duration // 60
             seconds = duration % 60
-            duration_str = f"{minutes}:{seconds:02d}"
 
             return {
-                'url': url,
-                'title': info.get('title', 'Unknown'),
-                'duration': duration,
-                'duration_str': duration_str,
-                'thumbnail': info.get('thumbnail'),
-                'uploader': info.get('uploader', 'Unknown'),
-                'is_local': False
+                "url": url,
+                "title": info.get("title", "Unknown"),
+                "duration": duration,
+                "duration_str": f"{minutes}:{seconds:02d}",
+                "thumbnail": info.get("thumbnail"),
+                "uploader": info.get("uploader", "Unknown"),
+                "is_local": False,
             }
 
     except Exception as e:
