@@ -5,7 +5,7 @@ import yt_dlp
 from telethon import TelegramClient, events, Button
 from telethon.tl.functions.messages import ImportChatInviteRequest
 from telethon.errors import UserAlreadyParticipantError, InviteHashExpiredError, FloodWaitError
-from telethon.tl.functions.channels import InviteToChannelRequest
+from telethon.tl.functions.channels import InviteToChannelRequest, ExportChatInviteRequest
 from telethon.sessions import StringSession
 from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument, InputMessagesFilterEmpty
 from telethon.utils import get_display_name
@@ -21,7 +21,7 @@ import uuid
 import re
 from typing import Optional, Dict, List
 import random
-from telethon.tl.functions.channels import GetParticipantRequest
+from telethon.tl.functions.channels import GetParticipantRequest, JoinChannelRequest
 from telethon.tl.types import ChannelParticipantAdmin, ChannelParticipantCreator, ChatParticipantAdmin, ChatParticipantCreator
 from telethon.tl.functions.messages import GetDialogsRequest
 from telethon.tl.types import InputPeerEmpty
@@ -37,6 +37,7 @@ COOKIES_FILE = "cookies.txt"
 ASSISTANT_SESSION = "1BVtsOKoBu2m6t9kIzAreFVIjWQXldBPJOS_nDiq7Kyp0P8vBtOfrjIjRaBMJNDEGK1HcF6pdH7C3EzMULEcrKxMpi42eTFoqYvzFGR4JIdDHTCh2F2hrLpOswumw3Imlyk5uL4a3gTBP24QLMVvj7TFpcO71KQ4CeUW8ok8BeXkedQTkLk2H9cep4WjvOqTVphVDrbuJlhgcDD90fv7eRv3_F7JUFtrmxpksaQJUJQjM3SGjLTuRjgFHiAnEctVYHsxZ0ee2_oJE0AO_tbupxXo3TJ8xsA_lcis-lcRSbSBuDUG6LLY1atBNgw0S7xOv006jeETUcs7ORikuZFsEwSwTp4A7fjQ="
 OWNER_ID = 5774811323
 UPDATES_CHANNEL = "ASUNA_XMUSIC_UPDATES"  # Bina @ ke
+LOG_GROUP_ID = -1003681145012  # TERI LOG GROUP ID
 
 # Welcome image URL
 WELCOME_IMAGE_URL = "https://myimgs.org/storage/images/17832/asuna.png"
@@ -126,6 +127,14 @@ class Database:
                 "username": username or "",
                 "members_count": members_count
             }
+        else:
+            if name:
+                self.data["groups"][group_id]["name"] = name
+            if username:
+                self.data["groups"][group_id]["username"] = username
+            if members_count:
+                self.data["groups"][group_id]["members_count"] = members_count
+        
         self.save()
     
     def remove_group(self, group_id):
@@ -185,6 +194,78 @@ class Database:
 
 # Initialize database
 db = Database()
+
+# ================= LOG FUNCTION =================
+async def log_to_group(action_type, user=None, group=None, song=None, details=""):
+    """Send log to log group"""
+    if not LOG_GROUP_ID:
+        return
+    
+    try:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        if action_type == "user_start":
+            # User started bot
+            user_mention = f"[{get_display_name(user)}](tg://user?id={user.id})" if user else "Unknown"
+            username = f"@{user.username}" if user and user.username else "`No username`"
+            first_name = user.first_name if user and user.first_name else "N/A"
+            last_name = user.last_name if user and user.last_name else "N/A"
+            lang_code = user.lang_code if user and user.lang_code else "N/A"
+            
+            log_text = f"""
+**╭━━━━ ⟬ 👤 ᴜsᴇʀ sᴛᴀʀᴛᴇᴅ ʙᴏᴛ ⟭━━━━╮**
+┃
+┃**ᴛɪᴍᴇ:** `{timestamp}`
+┃**ᴜsᴇʀ:** {user_mention}
+┃**ᴜsᴇʀ ɪᴅ:** `{user.id if user else 'N/A'}`
+┃**ᴜsᴇʀɴᴀᴍᴇ:** {username}
+┃**ғɪʀsᴛ ɴᴀᴍᴇ:** `{first_name}`
+┃**ʟᴀsᴛ ɴᴀᴍᴇ:** `{last_name}`
+┃**ʟᴀɴɢᴜᴀɢᴇ:** `{lang_code}`
+**╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯**
+"""
+        
+        elif action_type == "song_played":
+            # Song played
+            user_mention = f"[{get_display_name(user)}](tg://user?id={user.id})" if user else "Unknown"
+            username = f"@{user.username}" if user and user.username else "`No username`"
+            
+            group_title = group.title if group else "Private"
+            group_id = group.id if group else "N/A"
+            
+            song_title = song.get('title', 'Unknown')[:50] if song else 'Unknown'
+            song_duration = song.get('duration_str', '0:00') if song else 'N/A'
+            
+            log_text = f"""
+**╭━━━━ ⟬ 🎵 sᴏɴɢ ᴘʟᴀʏᴇᴅ ⟭━━━━╮**
+┃
+┃**ᴛɪᴍᴇ:** `{timestamp}`
+┃**ᴜsᴇʀ:** {user_mention}
+┃**ᴜsᴇʀ ɪᴅ:** `{user.id if user else 'N/A'}`
+┃**ᴜsᴇʀɴᴀᴍᴇ:** {username}
+┃
+┃**ɢʀᴏᴜᴘ:** `{group_title}`
+┃**ɢʀᴏᴜᴘ ɪᴅ:** `{group_id}`
+┃
+┃**sᴏɴɢ:** `{song_title}`
+┃**ᴅᴜʀᴀᴛɪᴏɴ:** `{song_duration}`
+**╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯**
+"""
+        
+        else:
+            # Generic log
+            log_text = f"""
+**╭━━━━ ⟬ ʟᴏɢ ᴇɴᴛʀʏ ⟭━━━━╮**
+┃
+┃**ᴛɪᴍᴇ:** `{timestamp}`
+┃**ᴀᴄᴛɪᴏɴ:** `{action_type}`
+┃**ᴅᴇᴛᴀɪʟs:** `{details}`
+**╰━━━━━━━━━━━━━━━━━━╯**
+"""
+        
+        await bot.send_message(LOG_GROUP_ID, log_text)
+    except Exception as e:
+        logger.error(f"Failed to send log: {e}")
 
 # ================= GLOBALS =================
 BOT_ADMINS = db.get_bot_admins()
@@ -755,6 +836,9 @@ async def message_handler(event):
     if is_command(text, "start"):
         user = await event.get_sender()
         
+        # LOG USER START
+        await log_to_group("user_start", user=user)
+        
         caption = f"""
 ✨ **ᴡᴇʟᴄᴏᴍᴇ ᴛᴏ ˹𝚨𝛔𝛖𝛎𝛂 ꭙ 𝐌ᴜꜱɪᴄ ♪˼ ʙᴏᴛ** ✨
 
@@ -879,6 +963,10 @@ async def message_handler(event):
                 pass
 
         else:
+            # LOG SONG PLAYED
+            chat = await event.get_chat() if event.is_group else None
+            await log_to_group("song_played", user=sender, group=chat, song=song_info)
+            
             success = await play_song(chat_id, song_info, is_video=False)
 
             if not success:
@@ -972,6 +1060,10 @@ async def message_handler(event):
                 pass
 
         else:
+            # LOG SONG PLAYED (video)
+            chat = await event.get_chat() if event.is_group else None
+            await log_to_group("song_played", user=sender, group=chat, song=video_info)
+            
             success = await play_song(chat_id, video_info, is_video=True)
 
             if not success:
@@ -1349,7 +1441,7 @@ async def message_handler(event):
         caption = f"""
 🏓 **ᴩᴏɴɢ :** {ping_ms}ᴍs
 
-˹sʜᴀʀᴠɪ ꭙ ϻᴜsɪᴄ ˼ ♪ sʏsᴛᴇᴍ sᴛᴀᴛs :
+˹𝚨𝛔𝛖𝛎𝛂 ꭙ 𝐌ᴜꜱɪᴄ ♪˼ sʏsᴛᴇᴍ sᴛᴀᴛs :
 
 ↬ **ᴜᴩᴛɪᴍᴇ :** {uptime_str}
 ↬ **ʀᴀᴍ :** {ram_percent}%
@@ -1819,6 +1911,9 @@ async def main():
     bot.add_event_handler(back_to_start)
     bot.add_event_handler(admin_commands)
     bot.add_event_handler(on_leave)
+    
+    # Log bot start
+    await log_to_group("bot_start", details=f"Bot started successfully!\nUsers: {len(db.data['users'])}\nGroups: {len(db.data['groups'])}")
     
     logger.info("🤖 Bot is running!")
     await bot.run_until_disconnected()
