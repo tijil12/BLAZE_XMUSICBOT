@@ -1698,64 +1698,92 @@ async def back_to_start(event):
 @events.register(events.NewMessage)
 async def admin_commands(event):
     """Handle admin commands"""
+
     if not event.message.text:
         return
-    
+
     text = event.message.text.strip()
     user_id = event.sender_id
-    sender = await event.get_sender()
-    
-    # /gcast command (FIXED)
+
+    # Only run if it's actually an admin command
+    if not any(is_command(text, cmd) for cmd in ["gcast", "addadmin", "deladmin", "admins"]):
+        return
+
+    # ================= GCAST =================
     if is_command(text, "gcast"):
+
         if not db.is_bot_admin(user_id):
-            reply_msg = await event.reply("**❌ ʏᴏᴜ ᴀʀᴇ ɴᴏᴛ ᴀ ʙᴏᴛ ᴀᴅᴍɪɴ!**")
-            try:
-                await event.message.delete()
-            except:
-                pass
+            reply_msg = await event.reply("❌ You are not a bot admin!")
             await asyncio.sleep(3)
             await reply_msg.delete()
             return
-        
+
         query = get_command_args(text, "gcast")
         if not query:
-            reply_msg = await event.reply("**ᴜsᴀɢᴇ:** `/gcast <ᴍᴇssᴀɢᴇ>`")
-            try:
-                await event.message.delete()
-            except:
-                pass
+            reply_msg = await event.reply("Usage: /gcast <message>")
             await asyncio.sleep(3)
             await reply_msg.delete()
             return
-        
-        # Delete user's command
+
         try:
             await event.message.delete()
         except:
             pass
-        
-        msg = await event.reply("**📢 ʙʀᴏᴀᴅᴄᴀsᴛɪɴɢ...**")
-        
-        sent = 0
-        failed = 0
-        
-        # Send to all groups from database
-        for group_id_str in db.data["groups"]:
+
+        msg = await event.reply("📢 Broadcasting...")
+
+        sent_users = 0
+        failed_users = 0
+        sent_groups = 0
+        failed_groups = 0
+
+        # ===== USERS =====
+        for user_id_str in list(db.data["users"].keys()):
             try:
-                group_id = int(group_id_str)
-                await bot.send_message(group_id, query)
-                sent += 1
-                await asyncio.sleep(0.5)  # Rate limit avoidance
+                await bot.send_message(int(user_id_str), query)
+                sent_users += 1
+                await asyncio.sleep(0.3)
+
             except Exception as e:
-                logger.error(f"Broadcast failed to {group_id_str}: {e}")
-                failed += 1
-                
-                # Remove group if bot is not there
-                if "not a member" in str(e).lower() or "chat not found" in str(e).lower():
+                failed_users += 1
+
+                error_text = str(e).lower()
+
+                # Remove blocked users
+                if "blocked" in error_text or "deactivated" in error_text:
+                    db.data["users"].pop(user_id_str, None)
+
+                # Handle flood wait
+                if "flood" in error_text:
+                    await asyncio.sleep(5)
+
+        # ===== GROUPS =====
+        for group_id_str in list(db.data["groups"].keys()):
+            try:
+                await bot.send_message(int(group_id_str), query)
+                sent_groups += 1
+                await asyncio.sleep(0.5)
+
+            except Exception as e:
+                failed_groups += 1
+                error_text = str(e).lower()
+
+                # Remove invalid groups
+                if "not a member" in error_text or "chat not found" in error_text:
                     db.remove_group(group_id_str)
-        
-        await msg.edit(f"**📢 ʙʀᴏᴀᴅᴄᴀsᴛ ᴄᴏᴍᴘʟᴇᴛᴇᴅ**\n\n✅ sᴇɴᴛ: {sent}\n❌ ғᴀɪʟᴇᴅ: {failed}")
-        await asyncio.sleep(5)
+
+                if "flood" in error_text:
+                    await asyncio.sleep(5)
+
+        db.save()
+
+        await msg.edit(
+            f"📢 Broadcast Completed\n\n"
+            f"👤 Users → ✅ {sent_users} | ❌ {failed_users}\n"
+            f"👥 Groups → ✅ {sent_groups} | ❌ {failed_groups}"
+        )
+
+        await asyncio.sleep(6)
         await msg.delete()
         return
     
