@@ -253,6 +253,17 @@ async def log_to_group(action_type, user=None, group=None, song=None, details=""
 **╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯**
 """
         
+        elif action_type == "cookies_updated":
+            # Cookies updated
+            log_text = f"""
+**╭━━━━ ⟬ 🍪 ᴄᴏᴏᴋɪᴇs ᴜᴘᴅᴀᴛᴇᴅ ⟭━━━━╮**
+┃
+┃**ᴛɪᴍᴇ:** `{timestamp}`
+┃**ᴀᴄᴛɪᴏɴ:** `Cookies file updated`
+┃**ᴅᴇᴛᴀɪʟs:** `{details}`
+**╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯**
+"""
+        
         else:
             # Generic log
             log_text = f"""
@@ -1497,6 +1508,91 @@ async def message_handler(event):
         await event.reply(caption)
         return
 
+# ================= UPDATE COOKIES COMMAND =================
+@events.register(events.NewMessage)
+async def update_cookies_handler(event):
+    """Handle update cookies command"""
+    if not event.message.text:
+        return
+
+    text = event.message.text.strip()
+    user_id = event.sender_id
+
+    if is_command(text, "update"):
+        # Only owner can update cookies
+        if user_id != OWNER_ID:
+            reply_msg = await event.reply("**❌ ᴏɴʟʏ ᴏᴡɴᴇʀ ᴄᴀɴ ᴜᴘᴅᴀᴛᴇ ᴄᴏᴏᴋɪᴇs!**")
+            try:
+                await event.message.delete()
+            except:
+                pass
+            await asyncio.sleep(3)
+            try:
+                await reply_msg.delete()
+            except:
+                pass
+            return
+
+        # Get cookies string
+        cookies_string = get_command_args(text, "update")
+        
+        if not cookies_string:
+            reply_msg = await event.reply(
+                "**📝 ᴜsᴀɢᴇ:** `/update <ᴄᴏᴏᴋɪᴇs_ᴛᴇxᴛ>`\n\n"
+                "**ᴇxᴀᴍᴘʟᴇ:**\n"
+                "`/update # Netscape HTTP Cookie File\n.youtube.com\tTRUE\t/\tTRUE\t1735689600\tCONSENT\tYES+1`"
+            )
+            try:
+                await event.message.delete()
+            except:
+                pass
+            await asyncio.sleep(5)
+            try:
+                await reply_msg.delete()
+            except:
+                pass
+            return
+
+        msg = await event.reply("**🔄 ᴜᴘᴅᴀᴛɪɴɢ ᴄᴏᴏᴋɪᴇs...**")
+
+        try:
+            await event.message.delete()
+        except:
+            pass
+
+        try:
+            # Write cookies to file
+            with open(COOKIES_FILE, 'w', encoding='utf-8') as f:
+                f.write(cookies_string)
+            
+            # Verify file was written
+            if os.path.exists(COOKIES_FILE):
+                file_size = os.path.getsize(COOKIES_FILE)
+                await msg.edit(
+                    f"**✅ ᴄᴏᴏᴋɪᴇs ᴜᴘᴅᴀᴛᴇᴅ sᴜᴄᴄᴇssғᴜʟʟʏ!**\n\n"
+                    f"**ғɪʟᴇ:** `{COOKIES_FILE}`\n"
+                    f"**sɪᴢᴇ:** `{file_size} ʙʏᴛᴇs`"
+                )
+                
+                # Log the update
+                await log_to_group(
+                    "cookies_updated", 
+                    details=f"Cookies file updated by owner\nSize: {file_size} bytes"
+                )
+            else:
+                await msg.edit("**❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴡʀɪᴛᴇ ᴄᴏᴏᴋɪᴇs ғɪʟᴇ!**")
+        
+        except Exception as e:
+            await msg.edit(f"**❌ ᴇʀʀᴏʀ ᴜᴘᴅᴀᴛɪɴɢ ᴄᴏᴏᴋɪᴇs:**\n`{str(e)}`")
+        
+        # Auto delete after 10 seconds
+        await asyncio.sleep(10)
+        try:
+            await msg.delete()
+        except:
+            pass
+        return
+
 # ================= CALLBACK HANDLER =================
 @events.register(events.CallbackQuery)
 async def callback_handler(event):
@@ -1658,6 +1754,7 @@ async def help_callback(event):
 ┃🗑️ **/clear** - ᴄʟᴇᴀʀ ǫᴜᴇᴜᴇ
 ┃🔄 **/reload** - ʀᴇʟᴏᴀᴅ ᴀᴅᴍɪɴs
 ┃🏓 **/ping** - ᴄʜᴇᴄᴋ ʙᴏᴛ ᴘɪɴɢ
+┃🍪 **/update** - ᴜᴘᴅᴀᴛᴇ ᴄᴏᴏᴋɪᴇs (ᴏᴡɴᴇʀ ᴏɴʟʏ)
 ┃
 ┃ **ᴀᴅᴍɪɴ ᴄᴏᴍᴍᴀɴᴅs:**
 ┃
@@ -1940,6 +2037,7 @@ async def main():
     bot.add_event_handler(back_to_start)
     bot.add_event_handler(admin_commands)
     bot.add_event_handler(on_leave)
+    bot.add_event_handler(update_cookies_handler)
     
     # Log bot start
     await log_to_group("bot_start", details=f"Bot started successfully!\nUsers: {len(db.data['users'])}\nGroups: {len(db.data['groups'])}")
