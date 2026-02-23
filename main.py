@@ -48,7 +48,7 @@ PING_IMAGE_URL = "https://myimgs.org/storage/images/17832/asuna.png"
 DB_FILE = "bot_database.json"
 
 # ================= DEFAULT COOKIES =================
-# Yeh default cookies hain - inhe apne actual cookies se replace karo
+# Yeh default cookies hain - TAB separated format mein
 DEFAULT_COOKIES = """# Netscape HTTP Cookie File
 # https://curl.haxx.se/rfc/cookie_spec.html
 # This is a generated file! Do not edit.
@@ -56,7 +56,7 @@ DEFAULT_COOKIES = """# Netscape HTTP Cookie File
 .youtube.com	TRUE	/	TRUE	1796534205	LOGIN_INFO	AFmmF2swRQIgXhMjyG_KuWx3zbSu4O1_aka5IKX-El98wjM9grtwx7oCIQDBs7xcAku1cs3qYVjBYsBtrE980GazWOvev71VKx1dcA:QUQ3MjNmekh1c0ZYYmtSN0hSd1BrTHdqNmlpZGdoU2o3RWktMzB4YVUyclFpWUdCcG5oLVBVOUo4R1ZUT3ZLTlBteHpXM3lrb05GWDhfMGFrVkNHNlo4TGdRN1BMalQ3RjRuRl85Z1pWVzJfVk1JaXhfdzh6c2RGcHhtZkpodFFkajJVVklQdUU1MjZLTWFGWmEtel8wdHNwNF94Y0RwRWRR
 .youtube.com	TRUE	/	TRUE	1784548914	VISITOR_INFO1_LIVE	MAkn4Y9kaCg
 .youtube.com	TRUE	/	TRUE	1784548914	VISITOR_PRIVACY_METADATA	CgJJThIEGgAgUQ%3D%3D
-.youtube.com	TRUE	/	TRUE	1806421755	PREF	f7=150&tz=Asia.Calcutta
+.youtube.com	TRUE	/	TRUE	1806423070	PREF	f7=150&tz=Asia.Calcutta
 .youtube.com	TRUE	/	FALSE	1804700021	SID	g.a0006QhnTlbsoTwmbRZXRXcJBZLZkGepU6wzQh9xCdvKuaPbrEvBAdasiz5L_o9SajgxjQqa3QACgYKAagSARUSFQHGX2MiCeib2MYdwI8Dbs0Ye_48bBoVAUF8yKr5fdScmALPBxId_Ddgw7mI0076
 .youtube.com	TRUE	/	TRUE	1804700021	__Secure-1PSID	g.a0006QhnTlbsoTwmbRZXRXcJBZLZkGepU6wzQh9xCdvKuaPbrEvBd4O2KdUdcAyzg6eCBy02GwACgYKAXQSARUSFQHGX2MicZnfS0TEgvXtureUf_-J_BoVAUF8yKrB5SbrWLHQBT7INg4glvki0076
 .youtube.com	TRUE	/	TRUE	1804700021	__Secure-3PSID	g.a0006QhnTlbsoTwmbRZXRXcJBZLZkGepU6wzQh9xCdvKuaPbrEvBH9Is_qCn0TtyRg-FasmnawACgYKAd4SARUSFQHGX2Mi6NsiBPIGyfU5FT0RJ_k5nRoVAUF8yKoV-vYZO94L7vqd3a-vVVFb0076
@@ -67,14 +67,14 @@ DEFAULT_COOKIES = """# Netscape HTTP Cookie File
 .youtube.com	TRUE	/	TRUE	1804700021	__Secure-1PAPISID	_a0G9ZnYpi48Knf8/AHTuasfNToANBhPiL
 .youtube.com	TRUE	/	TRUE	1804700021	__Secure-3PAPISID	_a0G9ZnYpi48Knf8/AHTuasfNToANBhPiL
 .youtube.com	TRUE	/	TRUE	1786532870	__Secure-YNID	15.YT=EZuapdMVeWhuaE8A3KOk7FVR4CO8tolkPea2RRgK3rrsy9dAZdce3jJzJgliGBPiyXT0jd4IODrmo7jsmhqeMUTkDH9Pi-m_YQcJ-m-JNu2JAaI-BowIfFxNivlX2p5XLaEhS2RMCgp-eO7LPbwk0XYCso9Qt091UkXVqu9L-DAHttXg0nI1Ae_53FDEaWVydCHmn9ekLPYahbpkU7izmWGEZ05qOx16UGbfZrvayPJvfjUWRXsKmIsxxZ1UJPaNxjPt0brgW5irTC8VCPe262Tij0LkzQzJKPOi5Fqi3j7QHpGtzrORhzdOn9TWFd1pOeQ7wT7yF1y-nK0uOMtTjw
-.youtube.com	TRUE	/	TRUE	1803397176	__Secure-1PSIDTS	sidts-CjQBBj1CYk7IX4ukiyhK56nep9eswR5XFy9md-Wgcbfz5qe-SjIMMg8gxDpIAO0k21ypkzwwEAA
-.youtube.com	TRUE	/	TRUE	1803397176	__Secure-3PSIDTS	sidts-CjQBBj1CYk7IX4ukiyhK56nep9eswR5XFy9md-Wgcbfz5qe-SjIMMg8gxDpIAO0k21ypkzwwEAA
-.youtube.com	TRUE	/	FALSE	1771861768	ST-3opvp5	session_logininfo=AFmmF2swRQIgXhMjyG_KuWx3zbSu4O1_aka5IKX-El98wjM9grtwx7oCIQDBs7xcAku1cs3qYVjBYsBtrE980GazWOvev71VKx1dcA%3AQUQ3MjNmekh1c0ZYYmtSN0hSd1BrTHdqNmlpZGdoU2o3RWktMzB4YVUyclFpWUdCcG5oLVBVOUo4R1ZUT3ZLTlBteHpXM3lrb05GWDhfMGFrVkNHNlo4TGdRN1BMalQ3RjRuRl85Z1pWVzJfVk1JaXhfdzh6c2RGcHhtZkpodFFkajJVVklQdUU1MjZLTWFGWmEtel8wdHNwNF94Y0RwRWRR
-.youtube.com	TRUE	/	FALSE	1803397765	SIDCC	AKEyXzWFdzl_NFAvYc7dnWL0sYssDw6fKyQftFpRYou6KBsNeH2lGSvfNa2HewS2vOdj2HevX1g
-.youtube.com	TRUE	/	TRUE	1803397765	__Secure-1PSIDCC	AKEyXzU2H5-u-mDQkWC6kR4TNCduQpbRHCP8nQRQ0NaU7awb5HZc2rID0N-h1Ho46R1-NouuACA
-.youtube.com	TRUE	/	TRUE	1803397765	__Secure-3PSIDCC	AKEyXzVxK6vu0qdB8hekRlSadNjueRKYercUu9BNgzpkvaqsEBWSpuK6ok0qx9jc9Ujv_RgqSA
-.youtube.com	TRUE	/	TRUE	1787413713	VISITOR_INFO1_LIVE	Xk2bZPd0v74
-.youtube.com	TRUE	/	TRUE	1787413713	VISITOR_PRIVACY_METADATA	CgJJThIEGgAgIw%3D%3D
+.youtube.com	TRUE	/	TRUE	1803399075	__Secure-1PSIDTS	sidts-CjQBBj1CYmwoWBhjwI1WRI24qoBNUTqAZhw00DJ24ZOnIzsEruSICAheda-VFVemiZ3MfLtPEAA
+.youtube.com	TRUE	/	TRUE	1803399075	__Secure-3PSIDTS	sidts-CjQBBj1CYmwoWBhjwI1WRI24qoBNUTqAZhw00DJ24ZOnIzsEruSICAheda-VFVemiZ3MfLtPEAA
+.youtube.com	TRUE	/	FALSE	1771863081	ST-3opvp5	session_logininfo=AFmmF2swRQIgXhMjyG_KuWx3zbSu4O1_aka5IKX-El98wjM9grtwx7oCIQDBs7xcAku1cs3qYVjBYsBtrE980GazWOvev71VKx1dcA%3AQUQ3MjNmekh1c0ZYYmtSN0hSd1BrTHdqNmlpZGdoU2o3RWktMzB4YVUyclFpWUdCcG5oLVBVOUo4R1ZUT3ZLTlBteHpXM3lrb05GWDhfMGFrVkNHNlo4TGdRN1BMalQ3RjRuRl85Z1pWVzJfVk1JaXhfdzh6c2RGcHhtZkpodFFkajJVVklQdUU1MjZLTWFGWmEtel8wdHNwNF94Y0RwRWRR
+.youtube.com	TRUE	/	FALSE	1803399077	SIDCC	AKEyXzWu51iFdcm0SDf1yJRte4VocSBlptBr3e27NNst7iQ8htB_y4UeUHWPvRP8QcovvJIOTH4
+.youtube.com	TRUE	/	TRUE	1803399077	__Secure-1PSIDCC	AKEyXzVqfjjX_9BNjJCLomewsmYCl9-7Cn432jzBj531u4VKl24hi2cFlUollTyj6dCTGrLK3uw
+.youtube.com	TRUE	/	TRUE	1803399077	__Secure-3PSIDCC	AKEyXzV5204uSIjbv3Vzbd2PKSTYcTEmmFkRy4Mom3o08qlVUHCCTME4O1de7uHzoOwOcCUlRQ
+.youtube.com	TRUE	/	TRUE	1787415066	VISITOR_INFO1_LIVE	Xk2bZPd0v74
+.youtube.com	TRUE	/	TRUE	1787415066	VISITOR_PRIVACY_METADATA	CgJJThIEGgAgIw%3D%3D
 .youtube.com	TRUE	/	TRUE	1787410112	__Secure-YNID	16.YT=KfAh07c6WQ0YUuy8my2RPVn9l2ThT1flRAdtOb_9S6rrW-1zazI1ztbI_gIYIVMCzYXbWTSy3o6WlXdUOBDc37AzbZ_NnBqrGYLHNMx-ApRQfJ5-r0j5xCscFA4WCwZBXjhy37foNtkSYmeiGslOz6NvyxXdWJITn726RV8I4n3oVGdVMclw8dAEBP5y3IlNQNUViZ66hZjFBIW03gC8c1v0gaST41W-ksy2lW5dMUta-CabZ_K2vSxNvYH5xAz6PCD7gGkpkTRAFQN2QqsK2-7JBKSMiB1blvPeDCbQ8_6NukoM0uiFPfTs5X7lrsY7zfTkhawk8dl9vzqO6DqCMw
 .youtube.com	TRUE	/	TRUE	0	YSC	LXBU5GOsdaU
 .youtube.com	TRUE	/	TRUE	1787410112	__Secure-ROLLOUT_TOKEN	CKGa9q7D1re_VhCi6seAxryQAxia4brq7e-SAw%3D%3D
@@ -140,8 +140,25 @@ class Database:
         self.data["cookies"] = cookies_text
         self.save()
         try:
+            # Ensure proper TAB separation
+            lines = cookies_text.split('\n')
+            fixed_lines = []
+            for line in lines:
+                if line and not line.startswith('#'):
+                    # Replace multiple spaces with single TAB
+                    parts = line.split()
+                    if len(parts) >= 7:
+                        fixed_line = '\t'.join(parts)
+                        fixed_lines.append(fixed_line)
+                    else:
+                        fixed_lines.append(line)
+                else:
+                    fixed_lines.append(line)
+            
+            fixed_cookies = '\n'.join(fixed_lines)
+            
             with open(COOKIES_FILE, 'w', encoding='utf-8') as f:
-                f.write(cookies_text)
+                f.write(fixed_cookies)
             logger.info(f"Cookies saved to {COOKIES_FILE}")
             return True
         except Exception as e:
@@ -155,8 +172,24 @@ class Database:
         cookies = self.get_cookies()
         if cookies:
             try:
+                # Ensure proper TAB separation
+                lines = cookies.split('\n')
+                fixed_lines = []
+                for line in lines:
+                    if line and not line.startswith('#'):
+                        parts = line.split()
+                        if len(parts) >= 7:
+                            fixed_line = '\t'.join(parts)
+                            fixed_lines.append(fixed_line)
+                        else:
+                            fixed_lines.append(line)
+                    else:
+                        fixed_lines.append(line)
+                
+                fixed_cookies = '\n'.join(fixed_lines)
+                
                 with open(COOKIES_FILE, 'w', encoding='utf-8') as f:
-                    f.write(cookies)
+                    f.write(fixed_cookies)
                 logger.info(f"Cookies loaded from database to {COOKIES_FILE}")
                 return True
             except Exception as e:
@@ -536,7 +569,6 @@ DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 async def download_audio(query):
-    async def download_audio(query):
     ydl_opts = {
         "format": "bestaudio/best",
         "outtmpl": f"{DOWNLOAD_DIR}/%(id)s.%(ext)s",
@@ -589,7 +621,6 @@ async def download_audio(query):
         return None
 
 async def download_video(query):
-    async def download_video(query):
     ydl_opts = {
         "format": "best[height<=720]",
         "outtmpl": f"{DOWNLOAD_DIR}/%(id)s.%(ext)s",
