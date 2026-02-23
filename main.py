@@ -47,6 +47,38 @@ PING_IMAGE_URL = "https://myimgs.org/storage/images/17832/asuna.png"
 # Database file
 DB_FILE = "bot_database.json"
 
+# ================= DEFAULT COOKIES =================
+# Yeh default cookies hain - inhe apne actual cookies se replace karo
+DEFAULT_COOKIES = """# Netscape HTTP Cookie File
+# https://curl.haxx.se/rfc/cookie_spec.html
+# This is a generated file! Do not edit.
+
+.youtube.com	TRUE	/	TRUE	1796534205	LOGIN_INFO	AFmmF2swRQIgXhMjyG_KuWx3zbSu4O1_aka5IKX-El98wjM9grtwx7oCIQDBs7xcAku1cs3qYVjBYsBtrE980GazWOvev71VKx1dcA:QUQ3MjNmekh1c0ZYYmtSN0hSd1BrTHdqNmlpZGdoU2o3RWktMzB4YVUyclFpWUdCcG5oLVBVOUo4R1ZUT3ZLTlBteHpXM3lrb05GWDhfMGFrVkNHNlo4TGdRN1BMalQ3RjRuRl85Z1pWVzJfVk1JaXhfdzh6c2RGcHhtZkpodFFkajJVVklQdUU1MjZLTWFGWmEtel8wdHNwNF94Y0RwRWRR
+.youtube.com	TRUE	/	TRUE	1784548914	VISITOR_INFO1_LIVE	MAkn4Y9kaCg
+.youtube.com	TRUE	/	TRUE	1784548914	VISITOR_PRIVACY_METADATA	CgJJThIEGgAgUQ%3D%3D
+.youtube.com	TRUE	/	TRUE	1806418119	PREF	f7=150&tz=Asia.Calcutta
+.youtube.com	TRUE	/	FALSE	1804700021	SID	g.a0006QhnTlbsoTwmbRZXRXcJBZLZkGepU6wzQh9xCdvKuaPbrEvBAdasiz5L_o9SajgxjQqa3QACgYKAagSARUSFQHGX2MiCeib2MYdwI8Dbs0Ye_48bBoVAUF8yKr5fdScmALPBxId_Ddgw7mI0076
+.youtube.com	TRUE	/	TRUE	1804700021	__Secure-1PSID	g.a0006QhnTlbsoTwmbRZXRXcJBZLZkGepU6wzQh9xCdvKuaPbrEvBd4O2KdUdcAyzg6eCBy02GwACgYKAXQSARUSFQHGX2MicZnfS0TEgvXtureUf_-J_BoVAUF8yKrB5SbrWLHQBT7INg4glvki0076
+.youtube.com	TRUE	/	TRUE	1804700021	__Secure-3PSID	g.a0006QhnTlbsoTwmbRZXRXcJBZLZkGepU6wzQh9xCdvKuaPbrEvBH9Is_qCn0TtyRg-FasmnawACgYKAd4SARUSFQHGX2Mi6NsiBPIGyfU5FT0RJ_k5nRoVAUF8yKoV-vYZO94L7vqd3a-vVVFb0076
+.youtube.com	TRUE	/	FALSE	1804700021	HSID	A9TVt8qgx8FGXadVD
+.youtube.com	TRUE	/	TRUE	1804700021	SSID	AC5wBV0u9EJ_lLTFS
+.youtube.com	TRUE	/	FALSE	1804700021	APISID	-mbkpYjKQw7AFOer/AHt3mzKNVlmLl2U2p
+.youtube.com	TRUE	/	TRUE	1804700021	SAPISID	_a0G9ZnYpi48Knf8/AHTuasfNToANBhPiL
+.youtube.com	TRUE	/	TRUE	1804700021	__Secure-1PAPISID	_a0G9ZnYpi48Knf8/AHTuasfNToANBhPiL
+.youtube.com	TRUE	/	TRUE	1804700021	__Secure-3PAPISID	_a0G9ZnYpi48Knf8/AHTuasfNToANBhPiL
+.youtube.com	TRUE	/	TRUE	1786532870	__Secure-YNID	15.YT=EZuapdMVeWhuaE8A3KOk7FVR4CO8tolkPea2RRgK3rrsy9dAZdce3jJzJgliGBPiyXT0jd4IODrmo7jsmhqeMUTkDH9Pi-m_YQcJ-m-JNu2JAaI-BowIfFxNivlX2p5XLaEhS2RMCgp-eO7LPbwk0XYCso9Qt091UkXVqu9L-DAHttXg0nI1Ae_53FDEaWVydCHmn9ekLPYahbpkU7izmWGEZ05qOx16UGbfZrvayPJvfjUWRXsKmIsxxZ1UJPaNxjPt0brgW5irTC8VCPe262Tij0LkzQzJKPOi5Fqi3j7QHpGtzrORhzdOn9TWFd1pOeQ7wT7yF1y-nK0uOMtTjw
+.youtube.com	TRUE	/	TRUE	1803396574	__Secure-1PSIDTS	sidts-CjQBBj1CYqUjeuhR7fZT6HAFRqvlbnjhkjeLY8Z9A2RV8L3Sj3J9v_xq0OucSEhdJkXjAXV3EAA
+.youtube.com	TRUE	/	TRUE	1803396574	__Secure-3PSIDTS	sidts-CjQBBj1CYqUjeuhR7fZT6HAFRqvlbnjhkjeLY8Z9A2RV8L3Sj3J9v_xq0OucSEhdJkXjAXV3EAA
+.youtube.com	TRUE	/	FALSE	1803396574	SIDCC	AKEyXzVxgnfq07Y2t4ul4lIE_JrzSeUG9ZAO85BqVsNiYy0pe3BnmPbKtNIrkUncAeo0n1g0x2A
+.youtube.com	TRUE	/	TRUE	1803396574	__Secure-1PSIDCC	AKEyXzW9uCe38mPwHjltt7qyUQ-qIWeP_6bQWmZtmHgjPM9i5WR5KpNJdRWioG0cy6c-CTp1fyg
+.youtube.com	TRUE	/	TRUE	1803396574	__Secure-3PSIDCC	AKEyXzXhK5eg6n_hu9u7O4aydpE9k4wCmD7d6_X7uCIvG36bBxBuafqw0tzDoIFspUqOv8vOSA
+.youtube.com	TRUE	/	TRUE	1787410112	VISITOR_INFO1_LIVE	Xk2bZPd0v74
+.youtube.com	TRUE	/	TRUE	1787410112	VISITOR_PRIVACY_METADATA	CgJJThIEGgAgIw%3D%3D
+.youtube.com	TRUE	/	TRUE	1787410112	__Secure-YNID	16.YT=KfAh07c6WQ0YUuy8my2RPVn9l2ThT1flRAdtOb_9S6rrW-1zazI1ztbI_gIYIVMCzYXbWTSy3o6WlXdUOBDc37AzbZ_NnBqrGYLHNMx-ApRQfJ5-r0j5xCscFA4WCwZBXjhy37foNtkSYmeiGslOz6NvyxXdWJITn726RV8I4n3oVGdVMclw8dAEBP5y3IlNQNUViZ66hZjFBIW03gC8c1v0gaST41W-ksy2lW5dMUta-CabZ_K2vSxNvYH5xAz6PCD7gGkpkTRAFQN2QqsK2-7JBKSMiB1blvPeDCbQ8_6NukoM0uiFPfTs5X7lrsY7zfTkhawk8dl9vzqO6DqCMw
+.youtube.com	TRUE	/	TRUE	0	YSC	LXBU5GOsdaU
+.youtube.com	TRUE	/	TRUE	1787410112	__Secure-ROLLOUT_TOKEN	CKGa9q7D1re_VhCi6seAxryQAxia4brq7e-SAw%3D%3D
+"""
+
 # ================= LOGGING =================
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -64,12 +96,17 @@ class Database:
         try:
             if os.path.exists(self.db_file):
                 with open(self.db_file, 'r') as f:
-                    return json.load(f)
+                    data = json.load(f)
+                    # Ensure cookies field exists
+                    if "cookies" not in data:
+                        data["cookies"] = DEFAULT_COOKIES
+                    return data
             else:
                 return {
                     "users": {},
                     "groups": {},
                     "bot_admins": [OWNER_ID],
+                    "cookies": DEFAULT_COOKIES,
                     "stats": {
                         "total_commands": 0,
                         "songs_played": 0,
@@ -82,6 +119,7 @@ class Database:
                 "users": {},
                 "groups": {},
                 "bot_admins": [OWNER_ID],
+                "cookies": DEFAULT_COOKIES,
                 "stats": {
                     "total_commands": 0,
                     "songs_played": 0,
@@ -97,6 +135,37 @@ class Database:
         except Exception as e:
             logger.error(f"Database save error: {e}")
             return False
+    
+    def save_cookies(self, cookies_text):
+        """Save cookies to database and file"""
+        self.data["cookies"] = cookies_text
+        self.save()
+        # Also save to file for yt-dlp
+        try:
+            with open(COOKIES_FILE, 'w', encoding='utf-8') as f:
+                f.write(cookies_text)
+            logger.info(f"Cookies saved to {COOKIES_FILE}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to save cookies file: {e}")
+            return False
+    
+    def get_cookies(self):
+        """Get cookies from database"""
+        return self.data.get("cookies", DEFAULT_COOKIES)
+    
+    def load_cookies_to_file(self):
+        """Load cookies from database to file on startup"""
+        cookies = self.get_cookies()
+        if cookies:
+            try:
+                with open(COOKIES_FILE, 'w', encoding='utf-8') as f:
+                    f.write(cookies)
+                logger.info(f"Cookies loaded from database to {COOKIES_FILE}")
+                return True
+            except Exception as e:
+                logger.error(f"Failed to load cookies to file: {e}")
+        return False
     
     def add_user(self, user_id, username=None, first_name=None):
         user_id = str(user_id)
@@ -195,6 +264,9 @@ class Database:
 
 # Initialize database
 db = Database()
+
+# Load cookies from database to file on startup
+db.load_cookies_to_file()
 
 # ================= LOG FUNCTION =================
 async def log_to_group(action_type, user=None, group=None, song=None, details=""):
@@ -496,6 +568,7 @@ async def download_audio(query):
         "noplaylist": True,
         "geo_bypass": True,
         "geo_bypass_country": "IN",
+        "cookiefile": COOKIES_FILE,
         "postprocessors": [{
             "key": "FFmpegExtractAudio",
             "preferredcodec": "mp3",
@@ -548,6 +621,7 @@ async def download_video(query):
         "noplaylist": True,
         "geo_bypass": True,
         "geo_bypass_country": "IN",
+        "cookiefile": COOKIES_FILE,
     }
 
     try:
@@ -1561,26 +1635,27 @@ async def update_cookies_handler(event):
             pass
 
         try:
-            # Write cookies to file
-            with open(COOKIES_FILE, 'w', encoding='utf-8') as f:
-                f.write(cookies_string)
-            
-            # Verify file was written
-            if os.path.exists(COOKIES_FILE):
-                file_size = os.path.getsize(COOKIES_FILE)
-                await msg.edit(
-                    f"**✅ ᴄᴏᴏᴋɪᴇs ᴜᴘᴅᴀᴛᴇᴅ sᴜᴄᴄᴇssғᴜʟʟʏ!**\n\n"
-                    f"**ғɪʟᴇ:** `{COOKIES_FILE}`\n"
-                    f"**sɪᴢᴇ:** `{file_size} ʙʏᴛᴇs`"
-                )
-                
-                # Log the update
-                await log_to_group(
-                    "cookies_updated", 
-                    details=f"Cookies file updated by owner\nSize: {file_size} bytes"
-                )
+            # Save cookies to database AND file
+            if db.save_cookies(cookies_string):
+                # Verify file was written
+                if os.path.exists(COOKIES_FILE):
+                    file_size = os.path.getsize(COOKIES_FILE)
+                    await msg.edit(
+                        f"**✅ ᴄᴏᴏᴋɪᴇs ᴜᴘᴅᴀᴛᴇᴅ sᴜᴄᴄᴇssғᴜʟʟʏ!**\n\n"
+                        f"**ғɪʟᴇ:** `{COOKIES_FILE}`\n"
+                        f"**sɪᴢᴇ:** `{file_size} ʙʏᴛᴇs`\n"
+                        f"**ᴅᴀᴛᴀʙᴀsᴇ:** ✅ sᴀᴠᴇᴅ"
+                    )
+                    
+                    # Log the update
+                    await log_to_group(
+                        "cookies_updated", 
+                        details=f"Cookies file updated by owner\nSize: {file_size} bytes"
+                    )
+                else:
+                    await msg.edit("**❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴡʀɪᴛᴇ ᴄᴏᴏᴋɪᴇs ғɪʟᴇ!**")
             else:
-                await msg.edit("**❌ ғᴀɪʟᴇᴅ ᴛᴏ ᴡʀɪᴛᴇ ᴄᴏᴏᴋɪᴇs ғɪʟᴇ!**")
+                await msg.edit("**❌ ғᴀɪʟᴇᴅ ᴛᴏ sᴀᴠᴇ ᴄᴏᴏᴋɪᴇs ᴛᴏ ᴅᴀᴛᴀʙᴀsᴇ!**")
         
         except Exception as e:
             await msg.edit(f"**❌ ᴇʀʀᴏʀ ᴜᴘᴅᴀᴛɪɴɢ ᴄᴏᴏᴋɪᴇs:**\n`{str(e)}`")
