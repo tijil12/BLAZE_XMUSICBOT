@@ -854,7 +854,7 @@ async def message_handler(event):
         buttons = [
             [Button.url("⟡➣ 𝙾𝚠𝚗𝚎𝚛", f"https://t.me/god_knows_0"),
              Button.url("➕ 𝙰𝚍𝚍 𝙼𝚎", f"https://t.me/{(await event.client.get_me()).username}?startgroup=true")],
-            [Button.inline("⟡➣ 𝙷𝚎𝚕𝚙", data="help"),
+            [Button.inline("⟡➣ 𝙷𝚎𝚕𝚙", data="help", style="primary"),
              Button.url("⟡➣ 𝚄𝚙𝚍𝚊𝚝𝚎𝚜", f"https://t.me/{UPDATES_CHANNEL}")]
         ]
         
